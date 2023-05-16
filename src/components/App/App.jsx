@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { nanoid } from 'nanoid';
+import { useDispatch, useSelector } from 'react-redux';
+import { addContact, deleteContact } from 'redux/actions';
 import {
   PhonebookWrapper,
   PhonebookTitle,
@@ -9,18 +10,13 @@ import { ContactForm } from 'components/Form/Form';
 import { ContactList } from 'components/ContactList/ContactList';
 import { Filter } from 'components/Filter/Filter';
 
-const getContacts = () => {
-  try {
-    return JSON.parse(localStorage.getItem('contacts')) || [];
-  } catch (error) {
-    console.log(error);
-    return [];
-  }
-};
-
 export const App = () => {
-  const [contacts, setContacts] = useState(() => getContacts());
   const [filter, setFilter] = useState('');
+  const dispatch = useDispatch();
+
+  //костилі
+  let contacts = Object.values(useSelector(state => state));
+  contacts = contacts.filter(contact => contact.id);
 
   useEffect(() => {
     localStorage.setItem('contacts', JSON.stringify(contacts));
@@ -38,10 +34,7 @@ export const App = () => {
       return;
     }
 
-    setContacts(prevContacts => [
-      { id: nanoid(), name, number },
-      ...prevContacts,
-    ]);
+    dispatch(addContact(name, number));
   };
 
   const handleFilterChange = event => {
@@ -50,16 +43,14 @@ export const App = () => {
 
   const filterContacts = () => {
     const normalizedFilter = filter.toLowerCase();
-
-    return contacts.filter(contact =>
-      contact.name.toLowerCase().includes(normalizedFilter)
+    const filteredContacts = contacts.filter(({ name }) =>
+      name.toLowerCase().includes(normalizedFilter)
     );
+    return filteredContacts;
   };
 
-  const deleteContact = idToDelete => {
-    setContacts(prevContacts =>
-      prevContacts.filter(contact => contact.id !== idToDelete)
-    );
+  const removeContact = idToDelete => {
+    dispatch(deleteContact(idToDelete));
   };
 
   return (
@@ -68,7 +59,7 @@ export const App = () => {
       <ContactForm onSubmit={handleFormSubmit} />
       <PhonebookSubTitle>Contacts</PhonebookSubTitle>
       <Filter filterValue={filter} handleFilterChange={handleFilterChange} />
-      <ContactList contacts={filterContacts()} deleteContact={deleteContact} />
+      <ContactList contacts={filterContacts()} deleteContact={removeContact} />
     </PhonebookWrapper>
   );
 };
