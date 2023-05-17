@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import {
   AppForm,
   FormInput,
@@ -10,10 +9,14 @@ import { nanoid } from 'nanoid';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { useDispatch, useSelector } from 'react-redux';
+import { addContact } from 'redux/contactsSlice';
 
-export const ContactForm = ({ onSubmit }) => {
+export const ContactForm = () => {
   const nameID = nanoid();
   const numberID = nanoid();
+  const dispatch = useDispatch();
+  const contacts = useSelector(state => state.contacts);
 
   const validationSchema = yup.object().shape({
     name: yup
@@ -41,8 +44,19 @@ export const ContactForm = ({ onSubmit }) => {
     resolver: yupResolver(validationSchema),
   });
 
-  const handleFormSubmit = data => {
-    onSubmit(data);
+  const handleFormSubmit = ({ name, number }) => {
+    const normalizedName = name.toLowerCase();
+
+    const isNameAlreadyInContacts = contacts.find(
+      contact => contact.name.toLowerCase() === normalizedName
+    );
+
+    if (isNameAlreadyInContacts) {
+      alert(`${name} is already in contacts.`);
+      return;
+    }
+
+    dispatch(addContact(name, number));
     reset({ name: '', number: '' });
   };
 
@@ -57,8 +71,4 @@ export const ContactForm = ({ onSubmit }) => {
       <SubmitButton type="submit">Submit</SubmitButton>
     </AppForm>
   );
-};
-
-ContactForm.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
 };
